@@ -1,1 +1,420 @@
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Call Tracking Test - Telnyx</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .container { max-width: 800px; margin-top: 40px; }
+    .card { margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .card-header { background-color: #f8f9fa; }
+    .btn-primary { background-color: #165df5; }
+    .loading { display: none; }
+    .loading.active { display: inline-block; }
+    #numbersList { max-height: 300px; overflow-y: auto; }
+    .selected-number { background-color: #e7f3ff; }
+    .step { display: none; }
+    .step.active { display: block; }
+    .number-item { cursor: pointer; padding: 8px; border-bottom: 1px solid #eee; }
+    .number-item:hover { background-color: #f5f5f5; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="text-center mb-4">Call Tracking Test</h1>
+    
+    <!-- Step 1: Cerca numeri disponibili -->
+    <div class="step active" id="step1">
+      <div class="card">
+        <div class="card-header">
+          <h5>1. Cerca numeri disponibili</h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="countrySelect" class="form-label">Paese</label>
+            <select id="countrySelect" class="form-select">
+              <option value="IT" selected>Italia</option>
+              <option value="FR">Francia</option>
+              <option value="DE">Germania</option>
+              <option value="ES">Spagna</option>
+              <option value="GB">Regno Unito</option>
+            </select>
+          </div>
+          
+          <button id="searchNumbersBtn" class="btn btn-primary">
+            <span class="spinner-border spinner-border-sm loading" id="searchLoading"></span>
+            Cerca numeri disponibili
+          </button>
+          
+          <div class="mt-3">
+            <div id="numbersList" class="list-group mt-3"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="text-end">
+        <button id="goToStep2Btn" class="btn btn-success" disabled>Avanti &raquo;</button>
+      </div>
+    </div>
+    
+    <!-- Step 2: Acquista numero -->
+    <div class="step" id="step2">
+      <div class="card">
+        <div class="card-header">
+          <h5>2. Acquista il numero selezionato</h5>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info">
+            <strong>Numero selezionato:</strong> <span id="selectedNumberDisplay"></span>
+          </div>
+          
+          <p>Procedendo, verrà effettuato l'acquisto di questo numero attraverso Telnyx.</p>
+          
+          <button id="purchaseNumberBtn" class="btn btn-primary">
+            <span class="spinner-border spinner-border-sm loading" id="purchaseLoading"></span>
+            Acquista numero
+          </button>
+          
+          <div id="purchaseResult" class="mt-3"></div>
+        </div>
+      </div>
+      
+      <div class="text-end">
+        <button id="backToStep1Btn" class="btn btn-outline-secondary">&laquo; Indietro</button>
+        <button id="goToStep3Btn" class="btn btn-success" disabled>Avanti &raquo;</button>
+      </div>
+    </div>
+    
+    <!-- Step 3: Configura inoltro -->
+    <div class="step" id="step3">
+      <div class="card">
+        <div class="card-header">
+          <h5>3. Configura l'inoltro delle chiamate</h5>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-success">
+            <strong>Numero acquistato:</strong> <span id="purchasedNumberDisplay"></span>
+          </div>
+          
+          <div class="mb-3">
+            <label for="forwardToNumber" class="form-label">Inoltra chiamate a questo numero</label>
+            <input type="tel" id="forwardToNumber" class="form-control" placeholder="+39..." required>
+            <div class="form-text">Inserisci il numero completo con prefisso internazionale (es. +393401234567)</div>
+          </div>
+          
+          <button id="setupForwardingBtn" class="btn btn-primary">
+            <span class="spinner-border spinner-border-sm loading" id="forwardingLoading"></span>
+            Configura inoltro
+          </button>
+          
+          <div id="forwardingResult" class="mt-3"></div>
+        </div>
+      </div>
+      
+      <div class="text-end">
+        <button id="backToStep2Btn" class="btn btn-outline-secondary">&laquo; Indietro</button>
+        <button id="goToStep4Btn" class="btn btn-success" disabled>Avanti &raquo;</button>
+      </div>
+    </div>
+    
+    <!-- Step 4: Test e completamento -->
+    <div class="step" id="step4">
+      <div class="card">
+        <div class="card-header">
+          <h5>4. Test completato</h5>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-success">
+            <strong>Configurazione completata!</strong>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">Numero call tracking</h5>
+                  <p class="card-text" id="finalNumberDisplay">-</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">Inoltra a</h5>
+                  <p class="card-text" id="finalForwardDisplay">-</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-4">
+            <p><strong>Puoi ora testare il tuo numero di call tracking!</strong></p>
+            <p>Chiama il numero e la chiamata verrà inoltrata automaticamente al numero di destinazione che hai configurato.</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="text-end">
+        <button id="restartBtn" class="btn btn-outline-secondary">Ricomincia</button>
+      </div>
+    </div>
+  </div>
 
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Elementi UI
+      const searchBtn = document.getElementById('searchNumbersBtn');
+      const numbersList = document.getElementById('numbersList');
+      const goToStep2Btn = document.getElementById('goToStep2Btn');
+      const selectedNumberDisplay = document.getElementById('selectedNumberDisplay');
+      const purchaseNumberBtn = document.getElementById('purchaseNumberBtn');
+      const purchaseResult = document.getElementById('purchaseResult');
+      const goToStep3Btn = document.getElementById('goToStep3Btn');
+      const purchasedNumberDisplay = document.getElementById('purchasedNumberDisplay');
+      const forwardToNumber = document.getElementById('forwardToNumber');
+      const setupForwardingBtn = document.getElementById('setupForwardingBtn');
+      const forwardingResult = document.getElementById('forwardingResult');
+      const goToStep4Btn = document.getElementById('goToStep4Btn');
+      const finalNumberDisplay = document.getElementById('finalNumberDisplay');
+      const finalForwardDisplay = document.getElementById('finalForwardDisplay');
+      const restartBtn = document.getElementById('restartBtn');
+      
+      // Elementi di navigazione
+      const backToStep1Btn = document.getElementById('backToStep1Btn');
+      const backToStep2Btn = document.getElementById('backToStep2Btn');
+      
+      // Loading spinner
+      const searchLoading = document.getElementById('searchLoading');
+      const purchaseLoading = document.getElementById('purchaseLoading');
+      const forwardingLoading = document.getElementById('forwardingLoading');
+      
+      // Dati dell'applicazione
+      let selectedNumber = null;
+      let purchasedNumber = null;
+      
+      // Funzione per cambiare passo
+      function goToStep(stepNumber) {
+        document.querySelectorAll('.step').forEach(step => {
+          step.classList.remove('active');
+        });
+        document.getElementById(`step${stepNumber}`).classList.add('active');
+      }
+      
+      // STEP 1: Cerca numeri disponibili
+      searchBtn.addEventListener('click', async function() {
+        try {
+          // Mostra spinner
+          searchLoading.classList.add('active');
+          searchBtn.disabled = true;
+          
+          // Ottieni il paese selezionato
+          const country = document.getElementById('countrySelect').value;
+          
+          // Chiamata API per ottenere numeri disponibili
+          const response = await fetch(`/api/available-numbers?country=${country}`);
+          const data = await response.json();
+          
+          // Nascondi spinner
+          searchLoading.classList.remove('active');
+          searchBtn.disabled = false;
+          
+          // Mostra la lista dei numeri
+          numbersList.innerHTML = '';
+          
+          if (data.length === 0) {
+            numbersList.innerHTML = '<div class="alert alert-warning">Nessun numero disponibile per questo paese.</div>';
+            return;
+          }
+          
+          data.forEach(number => {
+            const item = document.createElement('div');
+            item.className = 'number-item';
+            item.textContent = number.phone_number;
+            item.addEventListener('click', function() {
+              // Deseleziona tutti gli altri
+              document.querySelectorAll('.number-item').forEach(el => {
+                el.classList.remove('selected-number');
+              });
+              
+              // Seleziona questo
+              item.classList.add('selected-number');
+              selectedNumber = number.phone_number;
+              selectedNumberDisplay.textContent = selectedNumber;
+              
+              // Abilita il pulsante "Avanti"
+              goToStep2Btn.disabled = false;
+            });
+            numbersList.appendChild(item);
+          });
+          
+        } catch (error) {
+          console.error('Errore nella ricerca dei numeri:', error);
+          searchLoading.classList.remove('active');
+          searchBtn.disabled = false;
+          numbersList.innerHTML = `<div class="alert alert-danger">Errore nella ricerca dei numeri: ${error.message}</div>`;
+        }
+      });
+      
+      // Vai al passo 2
+      goToStep2Btn.addEventListener('click', function() {
+        goToStep(2);
+      });
+      
+      // STEP 2: Acquista numero
+      purchaseNumberBtn.addEventListener('click', async function() {
+        try {
+          // Mostra spinner
+          purchaseLoading.classList.add('active');
+          purchaseNumberBtn.disabled = true;
+          
+          // Chiamata API per acquistare il numero
+          const response = await fetch('/api/purchase-number', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ phoneNumber: selectedNumber })
+          });
+          
+          const data = await response.json();
+          
+          // Nascondi spinner
+          purchaseLoading.classList.remove('active');
+          purchaseNumberBtn.disabled = false;
+          
+          if (data.success) {
+            purchasedNumber = selectedNumber;
+            purchasedNumberDisplay.textContent = purchasedNumber;
+            finalNumberDisplay.textContent = purchasedNumber;
+            
+            purchaseResult.innerHTML = `
+              <div class="alert alert-success">
+                Numero acquistato con successo!
+              </div>
+            `;
+            
+            // Abilita il pulsante "Avanti"
+            goToStep3Btn.disabled = false;
+          } else {
+            purchaseResult.innerHTML = `
+              <div class="alert alert-danger">
+                Errore nell'acquisto del numero: ${data.error}
+              </div>
+            `;
+          }
+          
+        } catch (error) {
+          console.error('Errore nell\'acquisto del numero:', error);
+          purchaseLoading.classList.remove('active');
+          purchaseNumberBtn.disabled = false;
+          purchaseResult.innerHTML = `
+            <div class="alert alert-danger">
+              Errore nell'acquisto del numero: ${error.message}
+            </div>
+          `;
+        }
+      });
+      
+      // Vai al passo 3
+      goToStep3Btn.addEventListener('click', function() {
+        goToStep(3);
+      });
+      
+      // STEP 3: Configura inoltro
+      setupForwardingBtn.addEventListener('click', async function() {
+        try {
+          // Validazione
+          const forwardNumber = forwardToNumber.value.trim();
+          if (!forwardNumber) {
+            forwardingResult.innerHTML = `
+              <div class="alert alert-warning">
+                Inserisci un numero di telefono valido per l'inoltro.
+              </div>
+            `;
+            return;
+          }
+          
+          // Mostra spinner
+          forwardingLoading.classList.add('active');
+          setupForwardingBtn.disabled = true;
+          
+          // Chiamata API per configurare l'inoltro
+          const response = await fetch('/api/setup-call-forwarding', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              phoneNumber: purchasedNumber,
+              forwardToNumber: forwardNumber
+            })
+          });
+          
+          const data = await response.json();
+          
+          // Nascondi spinner
+          forwardingLoading.classList.remove('active');
+          setupForwardingBtn.disabled = false;
+          
+          if (data.success) {
+            finalForwardDisplay.textContent = forwardNumber;
+            
+            forwardingResult.innerHTML = `
+              <div class="alert alert-success">
+                Inoltro configurato con successo!
+              </div>
+            `;
+            
+            // Abilita il pulsante "Avanti"
+            goToStep4Btn.disabled = false;
+          } else {
+            forwardingResult.innerHTML = `
+              <div class="alert alert-danger">
+                Errore nella configurazione dell'inoltro: ${data.error}
+              </div>
+            `;
+          }
+          
+        } catch (error) {
+          console.error('Errore nella configurazione dell\'inoltro:', error);
+          forwardingLoading.classList.remove('active');
+          setupForwardingBtn.disabled = false;
+          forwardingResult.innerHTML = `
+            <div class="alert alert-danger">
+              Errore nella configurazione dell'inoltro: ${error.message}
+            </div>
+          `;
+        }
+      });
+      
+      // Vai al passo 4
+      goToStep4Btn.addEventListener('click', function() {
+        goToStep(4);
+      });
+      
+      // Gestisci pulsanti "Indietro"
+      backToStep1Btn.addEventListener('click', function() {
+        goToStep(1);
+      });
+      
+      backToStep2Btn.addEventListener('click', function() {
+        goToStep(2);
+      });
+      
+      // Riavvia
+      restartBtn.addEventListener('click', function() {
+        goToStep(1);
+        selectedNumber = null;
+        purchasedNumber = null;
+        numbersList.innerHTML = '';
+        goToStep2Btn.disabled = true;
+        purchaseResult.innerHTML = '';
+        forwardingResult.innerHTML = '';
+        forwardToNumber.value = '';
+      });
+    });
+  </script>
+</body>
+</html>
